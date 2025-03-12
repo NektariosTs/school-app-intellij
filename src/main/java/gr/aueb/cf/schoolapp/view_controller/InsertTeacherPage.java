@@ -1,264 +1,363 @@
 package gr.aueb.cf.schoolapp.view_controller;
 
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+
+import gr.aueb.cf.schoolapp.Main;
+import gr.aueb.cf.schoolapp.dao.CityDAOImpl;
+import gr.aueb.cf.schoolapp.dao.ICityDAO;
+import gr.aueb.cf.schoolapp.dao.ITeacherDAO;
+import gr.aueb.cf.schoolapp.dao.TeacherDAOImpl;
+import gr.aueb.cf.schoolapp.dao.exceptions.TeacherDAOException;
+import gr.aueb.cf.schoolapp.dto.TeacherInsertDTO;
+import gr.aueb.cf.schoolapp.dto.TeacherReadOnlyDTO;
+import gr.aueb.cf.schoolapp.exceptions.TeacherAlreadyExistsException;
+import gr.aueb.cf.schoolapp.model.City;
+import gr.aueb.cf.schoolapp.service.CityServiceImpl;
+import gr.aueb.cf.schoolapp.service.ICityService;
+import gr.aueb.cf.schoolapp.service.ITeacherService;
+import gr.aueb.cf.schoolapp.service.TeacherServiceImpl;
+import gr.aueb.cf.schoolapp.util.DBUtil;
+import gr.aueb.cf.schoolapp.validator.TeacherValidator;
+
+//import gr.aueb.cf.schoolapp.model.City;
+
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
+import java.awt.Font;
+import java.awt.Color;
+import javax.swing.ImageIcon;
+import javax.swing.JSeparator;
+import javax.swing.JTextField;
+import javax.swing.JComboBox;
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class InsertTeacherPage extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
-	private JTextField nameText;
+	private JTextField firstnameText;
 	private JTextField lastnameText;
-	private JTextField afmText;
-	private JTextField fathersNameText;
-	private JTextField phoneText;
+	private JTextField vatText;
+	private JTextField fathernameText;
+	private JTextField phoneNumberText;
 	private JTextField emailText;
-	private JTextField adressText;
-	private JTextField numberText;
-	private JTextField zipCodeText;
+	private JTextField streetText;
+	private JTextField streetNumberText;
+	private JTextField zipcodeText;
+	private JLabel errorFirstname;
+	private JLabel errorLastname;
+	private JComboBox<City> cityComboBox;
+	private List<City> cities = new ArrayList<>();
 
+	private final ITeacherDAO teacherDAO = new TeacherDAOImpl();
+	private final ITeacherService teacherService = new TeacherServiceImpl(teacherDAO);
 
-	/**
-	 * Create the frame.
-	 */
+	private final ICityDAO cityDAO = new CityDAOImpl();
+	private final ICityService cityService = new CityServiceImpl(cityDAO);
+
 	public InsertTeacherPage() {
-		setTitle("Ποιότητα στην Εκπαίδευση");
-		setIconImage(Toolkit.getDefaultToolkit().getImage(InsertTeacherPage.class.getResource("/images/eduv2.png")));
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 896, 773);
-		contentPane = new JPanel();
-		contentPane.addMouseListener(new MouseAdapter() {
+		addWindowListener(new WindowAdapter() {
 			@Override
-			public void mouseExited(MouseEvent e) {
+			public void windowActivated(WindowEvent e) {
+				try {
+					cityService.getAllCities().forEach(cityComboBox::addItem);
+				} catch (SQLException ex) {
+					JOptionPane.showMessageDialog(null, "Get cities fatal error. " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+				}
 			}
 		});
+
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		setTitle("Ποιότητα στην Εκπαίδευση");
+		setBounds(100, 100, 857, 701);
+		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
-		
+
+		JLabel lblTeacherInfo = new JLabel("Στοιχεία Εκπαιδευτή");
+		lblTeacherInfo.setFont(new Font("Tahoma", Font.BOLD, 22));
+		lblTeacherInfo.setBounds(267, 63, 341, 44);
+		contentPane.add(lblTeacherInfo);
+
 		JPanel header = new JPanel();
 		header.setLayout(null);
 		header.setBackground(new Color(0, 52, 117));
-		header.setBounds(0, 0, 880, 67);
+		header.setBounds(0, 0, 842, 52);
 		contentPane.add(header);
-		
+
 		JLabel govImage = new JLabel("");
 		govImage.setIcon(new ImageIcon(InsertTeacherPage.class.getResource("/images/gov_logo_small.png")));
-		govImage.setBounds(9, 5, 220, 57);
+		govImage.setBounds(0, 0, 100, 52);
 		header.add(govImage);
-		
-		JLabel firstLastName = new JLabel("ΝΕΚΤΑΡΙΟΣ ΤΣΑΓΚΑΡΗΣ");
+
+		JLabel firstLastName = new JLabel("ΑΘΑΝΑΣΙΟΣ ΑΝΔΡΟΥΤΣΟΣ");
 		firstLastName.setForeground(Color.WHITE);
-		firstLastName.setFont(new Font("Tahoma", Font.BOLD, 11));
-		firstLastName.setBounds(718, 20, 152, 23);
+		firstLastName.setBounds(649, 11, 183, 30);
 		header.add(firstLastName);
-		
+
 		JPanel footer = new JPanel();
 		footer.setLayout(null);
-		footer.setBounds(0, 648, 880, 88);
+		footer.setBounds(0, 574, 842, 90);
 		contentPane.add(footer);
-		
-		JLabel lblManual = new JLabel("Εγχειρίδιο Χρήσης");
-		lblManual.setForeground(Color.BLUE);
-		lblManual.setFont(new Font("Tahoma", Font.BOLD, 12));
-		lblManual.setBounds(127, 23, 138, 36);
-		footer.add(lblManual);
-		
-		JLabel lblQuestions = new JLabel("Συχνές Ερωτήσεις");
-		lblQuestions.setForeground(Color.BLUE);
-		lblQuestions.setFont(new Font("Tahoma", Font.BOLD, 12));
-		lblQuestions.setBounds(617, 29, 123, 25);
-		footer.add(lblQuestions);
-		
-		JLabel lblSupport = new JLabel("Υποστήριξη πελατών");
-		lblSupport.setForeground(Color.BLUE);
-		lblSupport.setFont(new Font("Tahoma", Font.BOLD, 12));
-		lblSupport.setBounds(358, 29, 156, 25);
-		footer.add(lblSupport);
-		
-		JLabel lblNewLabel = new JLabel("Στοιχεία Εκπαιδευτή");
-		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 23));
-		lblNewLabel.setBounds(284, 95, 270, 47);
-		contentPane.add(lblNewLabel);
-		
-		JLabel lblName = new JLabel("Όνομα*");
-		lblName.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblName.setBounds(32, 149, 78, 34);
-		contentPane.add(lblName);
-		
-		nameText = new JTextField();
-		nameText.setBounds(109, 149, 255, 35);
-		contentPane.add(nameText);
-		nameText.setColumns(10);
-		
-		JLabel errorFirstname = new JLabel("");
-		errorFirstname.setFont(new Font("Tahoma", Font.BOLD, 11));
-		errorFirstname.setForeground(new Color(255, 0, 0));
-		errorFirstname.setBounds(109, 183, 255, 34);
-		contentPane.add(errorFirstname);
-		
-		JLabel lblLastname = new JLabel("Επώνυμο*");
-		lblLastname.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblLastname.setBounds(465, 149, 78, 34);
-		contentPane.add(lblLastname);
-		
+
+		JLabel lbl_manual = new JLabel("Εγχειρίδιο Χρήσης");
+		lbl_manual.setForeground(new Color(0, 52, 117));
+		lbl_manual.setBounds(199, 37, 151, 29);
+		footer.add(lbl_manual);
+
+		JLabel lbl_oftenQuestions = new JLabel("Συχνές Ερωτήσεις");
+		lbl_oftenQuestions.setForeground(new Color(0, 52, 117));
+		lbl_oftenQuestions.setBounds(360, 37, 151, 29);
+		footer.add(lbl_oftenQuestions);
+
+		JLabel lbl_support = new JLabel("Υποστήριξη Πολιτών");
+		lbl_support.setForeground(new Color(0, 52, 117));
+		lbl_support.setBounds(521, 37, 151, 29);
+		footer.add(lbl_support);
+
+		JSeparator lineBottom = new JSeparator();
+		lineBottom.setBackground(Color.BLUE);
+		lineBottom.setBounds(0, 0, 850, 2);
+		footer.add(lineBottom);
+
+		firstnameText = new JTextField();
+		firstnameText.setBounds(91, 131, 263, 37);
+		contentPane.add(firstnameText);
+		firstnameText.setColumns(10);
+
+		firstnameText.addFocusListener(new FocusAdapter() {
+			@Override
+			public void focusLost(FocusEvent e) {
+				String inputFirstname;
+				inputFirstname = firstnameText.getText().trim();
+
+				errorFirstname.setText(inputFirstname.isEmpty() ? "Το όνομα είναι υποχρεωτικό" : "");
+			}
+		});
+
 		lastnameText = new JTextField();
 		lastnameText.setColumns(10);
-		lastnameText.setBounds(548, 149, 255, 35);
+		lastnameText.setBounds(512, 131, 263, 37);
 		contentPane.add(lastnameText);
-		
-		JLabel errorLastname = new JLabel("");
-		errorLastname.setForeground(Color.RED);
-		errorLastname.setFont(new Font("Tahoma", Font.BOLD, 11));
-		errorLastname.setBounds(548, 183, 255, 34);
-		contentPane.add(errorLastname);
-		
-		JLabel lblafm = new JLabel("ΑΦΜ*");
-		lblafm.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblafm.setBounds(52, 223, 58, 34);
-		contentPane.add(lblafm);
-		
-		afmText = new JTextField();
-		afmText.setColumns(10);
-		afmText.setBounds(109, 222, 255, 35);
-		contentPane.add(afmText);
-		
-		fathersNameText = new JTextField();
-		fathersNameText.setColumns(10);
-		fathersNameText.setBounds(548, 223, 255, 35);
-		contentPane.add(fathersNameText);
-		
-		JLabel lblFathersName = new JLabel("Πατρώνυμο*");
-		lblFathersName.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblFathersName.setBounds(448, 223, 98, 34);
-		contentPane.add(lblFathersName);
-		
-		JLabel errorafm = new JLabel("");
-		errorafm.setForeground(Color.RED);
-		errorafm.setFont(new Font("Tahoma", Font.BOLD, 11));
-		errorafm.setBounds(109, 258, 255, 34);
-		contentPane.add(errorafm);
-		
-		JLabel errorFathersname = new JLabel("");
-		errorFathersname.setForeground(Color.RED);
-		errorFathersname.setFont(new Font("Tahoma", Font.BOLD, 11));
-		errorFathersname.setBounds(548, 258, 255, 34);
-		contentPane.add(errorFathersname);
-		
-		JLabel lblPhone = new JLabel("Τηλέφωνο*");
-		lblPhone.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblPhone.setBounds(10, 292, 100, 34);
-		contentPane.add(lblPhone);
-		
-		phoneText = new JTextField();
-		phoneText.setColumns(10);
-		phoneText.setBounds(109, 292, 255, 35);
-		contentPane.add(phoneText);
-		
+
+		lastnameText.addFocusListener(new FocusAdapter() {
+			@Override
+			public void focusLost(FocusEvent e) {
+				String inputLastname;
+				inputLastname = lastnameText.getText().trim();
+
+				errorLastname.setText(inputLastname.isEmpty() ? "Το επώνυμο είναι υποχρεωτικό" : "");
+			}
+		});
+
+		JLabel lblFirstname = new JLabel("Όνομα*");
+		lblFirstname.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblFirstname.setBounds(29, 135, 62, 29);
+		contentPane.add(lblFirstname);
+
+		JLabel lblLastname = new JLabel("Επώνυμο*");
+		lblLastname.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblLastname.setBounds(432, 135, 84, 29);
+		contentPane.add(lblLastname);
+
+		JLabel lblVat = new JLabel("ΑΦΜ*");
+		lblVat.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblVat.setBounds(41, 202, 50, 29);
+		contentPane.add(lblVat);
+
+		vatText = new JTextField();
+		vatText.setColumns(10);
+		vatText.setBounds(91, 198, 263, 37);
+		contentPane.add(vatText);
+
+		JLabel lblFathername = new JLabel("Πατρώνυμο*");
+		lblFathername.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblFathername.setBounds(421, 202, 95, 29);
+		contentPane.add(lblFathername);
+
+		fathernameText = new JTextField();
+		fathernameText.setColumns(10);
+		fathernameText.setBounds(512, 198, 263, 37);
+		contentPane.add(fathernameText);
+
+		JLabel lblPhoneNumber = new JLabel("Τηλέφωνο*");
+		lblPhoneNumber.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblPhoneNumber.setBounds(10, 275, 81, 29);
+		contentPane.add(lblPhoneNumber);
+
+		phoneNumberText = new JTextField();
+		phoneNumberText.setColumns(10);
+		phoneNumberText.setBounds(91, 271, 263, 37);
+		contentPane.add(phoneNumberText);
+
 		JLabel lblEmail = new JLabel("e-mail*");
-		lblEmail.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblEmail.setBounds(486, 292, 58, 34);
+		lblEmail.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblEmail.setBounds(460, 275, 56, 29);
 		contentPane.add(lblEmail);
-		
+
 		emailText = new JTextField();
 		emailText.setColumns(10);
-		emailText.setBounds(548, 292, 255, 35);
+		emailText.setBounds(512, 271, 263, 37);
 		contentPane.add(emailText);
-		
-		JLabel errorPhone = new JLabel("");
-		errorPhone.setForeground(Color.RED);
-		errorPhone.setFont(new Font("Tahoma", Font.BOLD, 11));
-		errorPhone.setBounds(109, 327, 255, 34);
-		contentPane.add(errorPhone);
-		
-		JLabel errorEmail = new JLabel("");
-		errorEmail.setForeground(Color.RED);
-		errorEmail.setFont(new Font("Tahoma", Font.BOLD, 11));
-		errorEmail.setBounds(548, 327, 255, 34);
-		contentPane.add(errorEmail);
-		
-		JLabel lblAdress = new JLabel("Διεύθυνση*");
-		lblAdress.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblAdress.setBounds(10, 358, 100, 34);
-		contentPane.add(lblAdress);
-		
-		adressText = new JTextField();
-		adressText.setColumns(10);
-		adressText.setBounds(109, 360, 255, 35);
-		contentPane.add(adressText);
-		
-		JLabel lblNumber = new JLabel("Αριθμός*");
-		lblNumber.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblNumber.setBounds(476, 361, 71, 34);
-		contentPane.add(lblNumber);
-		
-		numberText = new JTextField();
-		numberText.setColumns(10);
-		numberText.setBounds(548, 360, 255, 35);
-		contentPane.add(numberText);
-		
-		JLabel errorAdress = new JLabel("");
-		errorAdress.setForeground(Color.RED);
-		errorAdress.setFont(new Font("Tahoma", Font.BOLD, 11));
-		errorAdress.setBounds(109, 395, 255, 34);
-		contentPane.add(errorAdress);
-		
-		JLabel errorNumber = new JLabel("");
-		errorNumber.setForeground(Color.RED);
-		errorNumber.setFont(new Font("Tahoma", Font.BOLD, 11));
-		errorNumber.setBounds(548, 395, 255, 34);
-		contentPane.add(errorNumber);
-		
-		JLabel lblzipCode = new JLabel("ΤΚ*");
-		lblzipCode.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblzipCode.setBounds(511, 429, 36, 34);
-		contentPane.add(lblzipCode);
-		
-		zipCodeText = new JTextField();
-		zipCodeText.setColumns(10);
-		zipCodeText.setBounds(548, 428, 255, 35);
-		contentPane.add(zipCodeText);
-		
-		JLabel errorZipCode = new JLabel("");
-		errorZipCode.setForeground(Color.RED);
-		errorZipCode.setFont(new Font("Tahoma", Font.BOLD, 11));
-		errorZipCode.setBounds(548, 464, 255, 34);
-		contentPane.add(errorZipCode);
-		
-		JComboBox cityComboBox = new JComboBox();
-		cityComboBox.setBounds(109, 431, 255, 34);
-		contentPane.add(cityComboBox);
-		
+
+		JLabel lblStreet = new JLabel("Διεύθυνση*");
+		lblStreet.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblStreet.setBounds(10, 342, 81, 29);
+		contentPane.add(lblStreet);
+
+		streetText = new JTextField();
+		streetText.setColumns(10);
+		streetText.setBounds(91, 338, 263, 37);
+		contentPane.add(streetText);
+
+		JLabel lblStreetNumber = new JLabel("Αριθμός*");
+		lblStreetNumber.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblStreetNumber.setBounds(446, 342, 70, 29);
+		contentPane.add(lblStreetNumber);
+
+		streetNumberText = new JTextField();
+		streetNumberText.setColumns(10);
+		streetNumberText.setBounds(512, 338, 263, 37);
+		contentPane.add(streetNumberText);
+
 		JLabel lblCity = new JLabel("Πόλη*");
-		lblCity.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblCity.setBounds(52, 429, 58, 34);
+		lblCity.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblCity.setBounds(41, 411, 50, 29);
 		contentPane.add(lblCity);
-		
-		JLabel errorComboBoxCity = new JLabel("");
-		errorComboBoxCity.setForeground(Color.RED);
-		errorComboBoxCity.setFont(new Font("Tahoma", Font.BOLD, 11));
-		errorComboBoxCity.setBounds(109, 464, 255, 34);
-		contentPane.add(errorComboBoxCity);
-		
-		JButton btnClose = new JButton("Κλείσιμο");
-		btnClose.setFont(new Font("Tahoma", Font.PLAIN, 13));
-		btnClose.setBounds(109, 528, 255, 60);
-		contentPane.add(btnClose);
-		
-		JButton btnSumbit = new JButton("Υποβολή");
-		btnSumbit.setForeground(new Color(255, 255, 255));
-		btnSumbit.setBackground(new Color(0, 128, 0));
-		btnSumbit.setFont(new Font("Tahoma", Font.PLAIN, 13));
-		btnSumbit.setBounds(548, 528, 255, 60);
-		contentPane.add(btnSumbit);
-		
-		JSeparator separator_1 = new JSeparator();
-		separator_1.setBackground(new Color(0, 128, 255));
-		separator_1.setBounds(0, 648, 880, 2);
-		contentPane.add(separator_1);
+
+		JLabel lblZipCode = new JLabel("ΤΚ*");
+		lblZipCode.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblZipCode.setBounds(481, 411, 35, 29);
+		contentPane.add(lblZipCode);
+
+		zipcodeText = new JTextField();
+		zipcodeText.setColumns(10);
+		zipcodeText.setBounds(512, 407, 263, 37);
+		contentPane.add(zipcodeText);
+
+		errorFirstname = new JLabel("");
+		errorFirstname.setForeground(new Color(255, 0, 0));
+		errorFirstname.setBounds(92, 167, 260, 29);
+		contentPane.add(errorFirstname);
+
+		errorLastname = new JLabel("");
+		errorLastname.setForeground(new Color(255, 0, 0));
+		errorLastname.setBounds(514, 167, 260, 29);
+		contentPane.add(errorLastname);
+
+		cityComboBox = new JComboBox<>();
+		cityComboBox.setBounds(89, 407, 263, 37);
+		contentPane.add(cityComboBox);
+
+
+		JButton insertBtn = new JButton("Υποβολή");
+		insertBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				TeacherReadOnlyDTO teacherReadOnlyDTO;
+				TeacherInsertDTO insertDTO;
+
+				// Data Binding
+				insertDTO = doDataBinding();
+
+				// Validation
+				Map<String , String > errors = TeacherValidator.validate(insertDTO);
+				if (!errors.isEmpty()) {
+					errorFirstname.setText(errors.getOrDefault("firstname", ""));
+					errorLastname.setText(errors.getOrDefault("lastname", ""));
+					return;
+				}
+
+				try {
+					teacherReadOnlyDTO = teacherService.insertTeacher(insertDTO);
+					JOptionPane.showMessageDialog(null, "Teacher with uuid: " + teacherReadOnlyDTO.getUuid(), "Insert", JOptionPane.INFORMATION_MESSAGE);
+					// todo form instead of message dialog
+				} catch (TeacherDAOException | TeacherAlreadyExistsException ex) {
+					JOptionPane.showMessageDialog(null, "Error. " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+				}
+			}
+		});
+
+		insertBtn.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		insertBtn.setForeground(new Color(255, 255, 255));
+		insertBtn.setBackground(new Color(64, 128, 128));
+		insertBtn.setBounds(512, 485, 263, 54);
+		contentPane.add(insertBtn);
+
+		JButton closeBtn = new JButton("Κλείσιμο");
+		closeBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Main.getDashboard().setEnabled(true);
+				Main.getInsertTeacherPage().setVisible(false);
+			}
+		});
+
+		closeBtn.setForeground(new Color(0, 0, 0));
+		closeBtn.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		closeBtn.setBackground(new Color(192, 192, 192));
+		closeBtn.setBounds(91, 485, 263, 54);
+		contentPane.add(closeBtn);
+	}
+
+	private List<City> fetchCitiesFromDatabase() {
+//		String sql = "SELECT * FROM cities order by name asc";
+//		List<City> cities = new ArrayList();
+//
+//		//Connection connection = Dashboard.getConnection();
+//
+//		try (Connection connection = DBUtil.getConnection();
+//			 PreparedStatement ps = connection.prepareStatement(sql)) {
+//
+//
+//			ResultSet rs = ps.executeQuery();
+//
+//			while (rs.next()) {
+//				int id = rs.getInt("id");
+//				String name = rs.getString("name");
+//
+//				City city = new City(id, name);
+//				cities.add(city);
+//			}
+//
+//		} catch (SQLException e) {
+//			JOptionPane.showMessageDialog(null,  "Select cities error", "Error", JOptionPane.ERROR_MESSAGE);
+//		}
+//		return cities;
+		return null;
+	}
+
+	private TeacherInsertDTO doDataBinding() {
+		final int DEFAULT_CITY_ID = 1;
+		String firstname = firstnameText.getText().trim();
+		String lastname = lastnameText.getText().trim();
+		String vat = vatText.getText().trim();
+		String fathername = fathernameText.getText().trim();
+		String phoneNumber = phoneNumberText.getText().trim();
+		String email = emailText.getText().trim();
+		String street = streetText.getText().trim();
+		String streetNumber = streetNumberText.getText().trim();
+		City selectedCity = (City) cityComboBox.getSelectedItem();
+		int cityId = (selectedCity != null) ? selectedCity.getId() : DEFAULT_CITY_ID;
+		String zipcode = zipcodeText.getText().trim();
+
+		return new TeacherInsertDTO(firstname, lastname, vat, fathername, phoneNumber, email, street, streetNumber, zipcode, cityId);
 	}
 }
